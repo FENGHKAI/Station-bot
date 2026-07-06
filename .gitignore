@@ -1,0 +1,30 @@
+# 编译生成的中间文件（必须忽略，否则仓库秒变几百兆）
+*/Listings/
+*/Objects/
+Debug/
+Release/
+*.o
+*.obj
+*.d
+*.crf
+*.htm
+*.map
+*.lst
+*.bin
+*.hex
+*.elf
+*.axf
+*.sct
+
+# IDE 产生的临时垃圾
+*.bak
+*.dep
+*.log
+*.uvguix.*
+*.scvd
+*.dbinfo
+JLinkLog.txt
+
+# 系统隐藏文件（Mac和Windows）
+.DS_Store
+Thumbs.db
