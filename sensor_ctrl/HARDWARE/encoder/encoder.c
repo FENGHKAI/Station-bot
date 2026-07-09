@@ -113,3 +113,11 @@ void encoder_init(void)
     encoder_one_init(Encoder_LR);
     encoder_one_init(Encoder_RR);
 }
+
+int16_t getCounter(Encoder_Handle_t Encoder)
+{
+    int16_t encoder_cnt;
+    encoder_cnt=(short)Encoder.TIM->CNT;
+    Encoder.TIM->CNT=0;
+    return encoder_cnt;
+}

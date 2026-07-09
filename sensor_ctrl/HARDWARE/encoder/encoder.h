@@ -26,5 +26,6 @@ typedef struct
 
 void encoder_one_init(Encoder_Handle_t Encoder);
 void encoder_init(void);
+int16_t getCounter(Encoder_Handle_t Encoder);
 
 #endif
