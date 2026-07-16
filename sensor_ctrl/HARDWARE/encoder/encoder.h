@@ -39,8 +39,15 @@ typedef enum {
     ENC_NUM
 } Encoder_Index_t;
 
+
+extern Encoder_Handle_t Encoder_LF;
+extern Encoder_Handle_t Encoder_LR ;
+extern Encoder_Handle_t Encoder_RF;
+extern Encoder_Handle_t Encoder_RR;
+
+extern float Encoder_Speed_t[4];
+
 void encoder_one_init(Encoder_Handle_t Encoder);
-static TIM6_init(void);
 static void encoder_init(void);
 int16_t getCounter(Encoder_Handle_t Encoder);
 float get_speed(Encoder_Index_t index);

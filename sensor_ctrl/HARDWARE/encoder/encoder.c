@@ -103,47 +103,17 @@ void encoder_one_init(Encoder_Handle_t Encoder)
 }
 
 /* 
-*brief 初始化基本定时器定时器
-*detail TIM6
-*/
-static TIM6_init(void)
-{
-    TIM_TimeBaseInitTypeDef TIM6_TimeBaseStructure;
-    NVIC_InitTypeDef NVIC_InitStructure;
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6,ENABLE);
-
-    TIM6_TimeBaseStructure.TIM_Prescaler=8400-1;
-    TIM6_TimeBaseStructure.TIM_Period=100-1;
-    TIM6_TimeBaseStructure.TIM_CounterMode=TIM_CounterMode_Up;
-    TIM6_TimeBaseStructure.TIM_ClockDivision=TIM_CKD_DIV1;
-
-    TIM_TimeBaseInit(TIM6,&TIM6_TimeBaseStructure);
-
-    TIM_ITConfig(TIM6,TIM_IT_Update,ENABLE);
-
-    NVIC_InitStructure.NVIC_IRQChannel=TIM6_DAC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0;   // 抢占优先级 0
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority=1;   // 子优先级 1
-
-    NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    TIM_Cmd(TIM6, ENABLE);
-}
-
-/* 
 *breif 初始化所有编码器
 *detail 调用ncoder_one_init(void)函数实现
 */
 static void encoder_init(void)
 {
-    TIM6_init();
     encoder_one_init(Encoder_LF);
     encoder_one_init(Encoder_LR);
     encoder_one_init(Encoder_RF);
     encoder_one_init(Encoder_RR);
 }
+
 /* 
 *brief 获取编码器计数值
 */
@@ -154,6 +124,7 @@ int16_t getCounter(Encoder_Handle_t Encoder)
     Encoder.TIM->CNT=0;
     return encoder_cnt;
 }
+
 /* 
 *brief 获取轮子速度接口
 *detail index输入取值ENC_LF,ENC_LR,ENC_RF,ENC_RR,ENC_NUM
@@ -162,32 +133,4 @@ float get_speed(Encoder_Index_t index)
 {
     if (index >= ENC_NUM) return 0.0f;
     return Encoder_Speed_t[index];
-}
-
-void TIM6_DAC_IRQHandler(void)
-{
-    int16_t cnt;
-    float delta_pulses;
-    // 检查 TIM6 更新中断
-    if (TIM_GetITStatus(TIM6, TIM_IT_Update) != RESET)
-    {
-        TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
-
-        cnt = getCounter(Encoder_LF);          // 自动清零
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_LF]=(float)delta_pulses*WHEEL_SCALE;
-
-        cnt = getCounter(Encoder_LR);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_LR]=(float)delta_pulses*WHEEL_SCALE;
-
-        cnt = getCounter(Encoder_RF);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_RF]=(float)delta_pulses*WHEEL_SCALE;
-        
-        cnt = getCounter(Encoder_RR);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_RR]=(float)delta_pulses*WHEEL_SCALE;
-        
-    }
 }

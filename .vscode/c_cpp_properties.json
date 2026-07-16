@@ -10,8 +10,11 @@
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\sys",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\usart",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\encoder",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\motor",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\timer",
                 "D:\\Keil\\ARM\\ARMCC\\include",
                 "D:\\Keil\\ARM\\ARMCC\\include\\rw",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\FWLIB\\src",
                 "${default}"
             ],
             "defines": [
