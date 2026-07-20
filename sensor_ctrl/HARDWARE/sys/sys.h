@@ -21,6 +21,7 @@
 //0,不支持ucos
 //1,支持ucos
 #define SYSTEM_SUPPORT_OS		0		//定义系统文件夹是否支持UCOS
+#define USE_MY_ASSERT    //用于开启自定义断言功能，注释掉后关闭断言功能
 																	    
 	 
 //位带操作,实现51类似的GPIO控制功能
@@ -84,6 +85,20 @@ void WFI_SET(void);		//执行WFI指令
 void INTX_DISABLE(void);//关闭所有中断
 void INTX_ENABLE(void);	//开启所有中断
 void MSR_MSP(u32 addr);	//设置堆栈地址 
+
+
+//自定义断言函数
+#ifdef USE_MY_ASSERT
+    #define my_assert(expr) \
+        do { \
+            if (!(expr)) { \
+                while (1);   /* 断言失败，死循环，调试器可在此捕获 */ \
+            } \
+        } while(0)
+#else
+    #define my_assert(expr) ((void)0)
+#endif
+
 #endif
 
 
