@@ -1,6 +1,6 @@
 #include "timer.h"
 
-static void TIM6_init(void)
+void TIM6_init(void)
 {
     TIM_TimeBaseInitTypeDef TIM6_TimeBaseStructure;
     NVIC_InitTypeDef NVIC_InitStructure;
@@ -28,28 +28,15 @@ static void TIM6_init(void)
 
 void TIM6_DAC_IRQHandler(void)
 {
-    int16_t cnt;
-    float delta_pulses;
     // 检查 TIM6 更新中断
     if (TIM_GetITStatus(TIM6, TIM_IT_Update) != RESET)
     {
+        // 清除中断标志（必须！）
         TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
 
-        cnt = getCounter(Encoder_LF);          // 自动清零
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_LF]=(float)delta_pulses*WHEEL_SCALE;
-
-        cnt = getCounter(Encoder_LR);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_LR]=(float)delta_pulses*WHEEL_SCALE;
-
-        cnt = getCounter(Encoder_RF);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_RF]=(float)delta_pulses*WHEEL_SCALE;
-        
-        cnt = getCounter(Encoder_RR);
-        delta_pulses = (float)cnt;
-        Encoder_Speed_t[ENC_RR]=(float)delta_pulses*WHEEL_SCALE;
-        
+        // 更新编码器速度（读取 CNT 并计算）
+        Update_Encoder_Speeds();
+        // 执行电机速度闭环控制
+        MotorControl_Update();
     }
 }

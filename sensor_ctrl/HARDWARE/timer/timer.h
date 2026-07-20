@@ -3,7 +3,8 @@
 
 #include "sys.h"
 #include "encoder.h"
+#include "motor.h"
 
-static void TIM6_init(void);
+void TIM6_init(void);
 
 #endif

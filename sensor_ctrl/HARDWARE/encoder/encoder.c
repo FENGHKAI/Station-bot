@@ -5,55 +5,59 @@
 #include "encoder.h"
 
 Encoder_Handle_t Encoder_LF = {
-    RCC_APB1Periph_TIM2,
-    RCC_AHB1Periph_GPIOA|RCC_AHB1Periph_GPIOB,
-    TIM2,
-    GPIOA,
-    GPIO_Pin_15,
-    GPIO_PinSource15,
-    GPIOB,
-    GPIO_Pin_3,
-    GPIO_PinSource3,
-    GPIO_AF_TIM2
-};//左前轮编码器
-Encoder_Handle_t Encoder_LR = {
-    RCC_APB1Periph_TIM4,
-    RCC_AHB1Periph_GPIOD,
-    TIM4,
-    GPIOD,
-    GPIO_Pin_12,
-    GPIO_PinSource12,
-    GPIOD,
-    GPIO_Pin_13,
-    GPIO_PinSource13,
-    GPIO_AF_TIM4
-};//左后轮编码器
-Encoder_Handle_t Encoder_RF = {
-    RCC_APB1Periph_TIM3,
-    RCC_AHB1Periph_GPIOB,
-    TIM3,
-    GPIOB,
-    GPIO_Pin_4,
-    GPIO_PinSource4,
-    GPIOB,
-    GPIO_Pin_5,
-    GPIO_PinSource5,
-    GPIO_AF_TIM3
-};//右前轮编码器
-Encoder_Handle_t Encoder_RR = {
-    RCC_APB1Periph_TIM5,
-    RCC_AHB1Periph_GPIOA,
-    TIM5,
-    GPIOA,
-    GPIO_Pin_0,
-    GPIO_PinSource0,
-    GPIOA,
-    GPIO_Pin_1,
-    GPIO_PinSource1,
-    GPIO_AF_TIM5
-};//右后轮编码器
+    .RCC_APB1Periph_TIM = RCC_APB1Periph_TIM2,
+    .RCC_AHB1Periph_GPIO = RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB,
+    .TIM = TIM2,
+    .GPIO_CH1 = GPIOA,
+    .GPIO_CH1_Pin = GPIO_Pin_15,
+    .GPIO_CH1_PinSouce = GPIO_PinSource15,
+    .GPIO_CH2 = GPIOB,
+    .GPIO_CH2_Pin = GPIO_Pin_3,
+    .GPIO_CH2_PinSouce = GPIO_PinSource3,
+    .GPIO_AF = GPIO_AF_TIM2
+};  // 左前轮编码器
 
-static float Encoder_Speed_t[4];  //0~3 分别对应 LF, LR, RF, RR
+Encoder_Handle_t Encoder_LR = {
+    .RCC_APB1Periph_TIM = RCC_APB1Periph_TIM4,
+    .RCC_AHB1Periph_GPIO = RCC_AHB1Periph_GPIOD,
+    .TIM = TIM4,
+    .GPIO_CH1 = GPIOD,
+    .GPIO_CH1_Pin = GPIO_Pin_12,
+    .GPIO_CH1_PinSouce = GPIO_PinSource12,
+    .GPIO_CH2 = GPIOD,
+    .GPIO_CH2_Pin = GPIO_Pin_13,
+    .GPIO_CH2_PinSouce = GPIO_PinSource13,
+    .GPIO_AF = GPIO_AF_TIM4
+};  // 左后轮编码器
+
+Encoder_Handle_t Encoder_RF = {
+    .RCC_APB1Periph_TIM = RCC_APB1Periph_TIM3,
+    .RCC_AHB1Periph_GPIO = RCC_AHB1Periph_GPIOB,
+    .TIM = TIM3,
+    .GPIO_CH1 = GPIOB,
+    .GPIO_CH1_Pin = GPIO_Pin_4,
+    .GPIO_CH1_PinSouce = GPIO_PinSource4,
+    .GPIO_CH2 = GPIOB,
+    .GPIO_CH2_Pin = GPIO_Pin_5,
+    .GPIO_CH2_PinSouce = GPIO_PinSource5,
+    .GPIO_AF = GPIO_AF_TIM3
+};  // 右前轮编码器
+
+Encoder_Handle_t Encoder_RR = {
+    .RCC_APB1Periph_TIM = RCC_APB1Periph_TIM5,
+    .RCC_AHB1Periph_GPIO = RCC_AHB1Periph_GPIOA,
+    .TIM = TIM5,
+    .GPIO_CH1 = GPIOA,
+    .GPIO_CH1_Pin = GPIO_Pin_0,
+    .GPIO_CH1_PinSouce = GPIO_PinSource0,
+    .GPIO_CH2 = GPIOA,
+    .GPIO_CH2_Pin = GPIO_Pin_1,
+    .GPIO_CH2_PinSouce = GPIO_PinSource1,
+    .GPIO_AF = GPIO_AF_TIM5
+};  // 右后轮编码器
+
+static float volatile Encoder_Speed_t[4];  //0~3 分别对应 LF, LR, RF, RR
+
 /* 
 *brief 初始化一个编码器
 */
@@ -106,7 +110,7 @@ void encoder_one_init(Encoder_Handle_t Encoder)
 *breif 初始化所有编码器
 *detail 调用ncoder_one_init(void)函数实现
 */
-static void encoder_init(void)
+void encoder_init(void)
 {
     encoder_one_init(Encoder_LF);
     encoder_one_init(Encoder_LR);
@@ -117,9 +121,9 @@ static void encoder_init(void)
 /* 
 *brief 获取编码器计数值
 */
-int16_t getCounter(Encoder_Handle_t Encoder)
+int32_t getCounter(Encoder_Handle_t Encoder)
 {
-    int16_t encoder_cnt;
+    int32_t encoder_cnt;
     encoder_cnt=(short)Encoder.TIM->CNT;
     Encoder.TIM->CNT=0;
     return encoder_cnt;
@@ -133,4 +137,33 @@ float get_speed(Encoder_Index_t index)
 {
     if (index >= ENC_NUM) return 0.0f;
     return Encoder_Speed_t[index];
+}
+
+/* 
+*brief 计算与更新速度
+*detail 不能单独调用，要放在定时器中断中执行
+*/
+void Update_Encoder_Speeds(void) {
+    int16_t cnt;
+    float delta_pulses;
+
+    // 左前轮
+    cnt = getCounter(Encoder_LF);
+    delta_pulses = (float)cnt;
+    Encoder_Speed_t[ENC_LF] = delta_pulses * WHEEL_SCALE;
+
+    // 左后轮
+    cnt = getCounter(Encoder_LR);
+    delta_pulses = (float)cnt;
+    Encoder_Speed_t[ENC_LR] = delta_pulses * WHEEL_SCALE;
+
+    // 右前轮
+    cnt = getCounter(Encoder_RF);
+    delta_pulses = (float)cnt;
+    Encoder_Speed_t[ENC_RF] = delta_pulses * WHEEL_SCALE;
+
+    // 右后轮
+    cnt = getCounter(Encoder_RR);
+    delta_pulses = (float)cnt;
+    Encoder_Speed_t[ENC_RR] = delta_pulses * WHEEL_SCALE;
 }
