@@ -13,6 +13,8 @@
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\motor",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\timer",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\ultrasonic",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\sys_time",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\tracking",
                 "D:\\Keil\\ARM\\ARMCC\\include",
                 "D:\\Keil\\ARM\\ARMCC\\include\\rw",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\FWLIB\\src",

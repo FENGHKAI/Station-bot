@@ -3,8 +3,8 @@
 *brief 编码器驱动声明
 */
 
-#ifndef ENCODER_H
-#define ENCODER_H
+#ifndef _ENCODER_H
+#define _ENCODER_H
 
 #include "sys.h"
 

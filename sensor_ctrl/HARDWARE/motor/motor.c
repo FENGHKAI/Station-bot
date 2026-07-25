@@ -57,7 +57,7 @@ Motor_Handle_t motor_RR = {
     .current_duty = 0
 };  // 右后电机 (RR) : PE5(TIM9_CH1) 正转, PE6(TIM9_CH2) 反转
 
-static PID_Handle_t pid_LF, pid_RF, pid_LR, pid_RR;
+PID_Handle_t pid_LF, pid_RF, pid_LR, pid_RR;
 
 /*
 *brief 初始化单个电机（GPIO + 定时器PWM）

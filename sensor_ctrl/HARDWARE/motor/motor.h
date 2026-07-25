@@ -50,6 +50,11 @@ extern Motor_Handle_t motor_RF;
 extern Motor_Handle_t motor_LR;
 extern Motor_Handle_t motor_RR;
 
+extern PID_Handle_t pid_LF;
+extern PID_Handle_t pid_RF; 
+extern PID_Handle_t pid_LR;
+extern PID_Handle_t pid_RR;
+
 void Motor_Init(Motor_Handle_t *motor);
 void Motor_SetSpeed(Motor_Handle_t *motor, int16_t duty);
 void PID_Init(PID_Handle_t *pid);

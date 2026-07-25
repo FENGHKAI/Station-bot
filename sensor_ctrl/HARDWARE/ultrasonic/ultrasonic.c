@@ -1,5 +1,5 @@
 /*
-*file hc_sr04.c
+*file ultrasonic.c
 *brief HC-SR04 超声波测距驱动实现（阻塞式轮询，TIM7 按需使能）
 *note  超时时间由调用者指定，函数内部使用该值检测超时，确保不会无限阻塞
 */
