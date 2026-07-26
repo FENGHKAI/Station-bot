@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\sys;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led</IncludePath>
+              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\sys;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -427,6 +427,11 @@
               <FileName>stm32f4xx_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\FWLIB\src\stm32f4xx_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>stm32f4xx_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FWLIB\src\stm32f4xx_adc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -517,6 +522,11 @@
               <FileName>led.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\led\led.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc_battery.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\adc_battery\adc_battery.c</FilePath>
             </File>
           </Files>
         </Group>

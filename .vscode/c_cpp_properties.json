@@ -19,6 +19,7 @@
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\buzzer",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\key",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\led",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\adc_battery",
                 "D:\\Keil\\ARM\\ARMCC\\include",
                 "D:\\Keil\\ARM\\ARMCC\\include\\rw",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\FWLIB\\src",
