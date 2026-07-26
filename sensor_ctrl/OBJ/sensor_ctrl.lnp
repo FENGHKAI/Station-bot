@@ -19,6 +19,10 @@
 "..\obj\ultrasonic.o"
 "..\obj\sys_time.o"
 "..\obj\tracking.o"
+"..\obj\mpu6050.o"
+"..\obj\buzzer.o"
+"..\obj\key.o"
+"..\obj\led.o"
 --strict --scatter "..\OBJ\sensor_ctrl.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers

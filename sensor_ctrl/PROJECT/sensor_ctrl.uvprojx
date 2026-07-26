@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\sys;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking</IncludePath>
+              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\sys;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -497,6 +497,26 @@
               <FileName>tracking.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\tracking\tracking.c</FilePath>
+            </File>
+            <File>
+              <FileName>mpu6050.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\mpu6050\mpu6050.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\buzzer\buzzer.c</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\key\key.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\led\led.c</FilePath>
             </File>
           </Files>
         </Group>

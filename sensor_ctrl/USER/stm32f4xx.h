@@ -471,6 +471,7 @@ typedef enum IRQn
 #include "system_stm32f4xx.h"
 #include <stdint.h>
 #include <math.h>
+#include <stddef.h>
 
 /** @addtogroup Exported_types
   * @{
