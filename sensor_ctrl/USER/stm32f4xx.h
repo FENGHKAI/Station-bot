@@ -472,6 +472,7 @@ typedef enum IRQn
 #include <stdint.h>
 #include <math.h>
 #include <stddef.h>
+#include <stdio.h>
 
 /** @addtogroup Exported_types
   * @{

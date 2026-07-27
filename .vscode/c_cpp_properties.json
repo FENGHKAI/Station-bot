@@ -20,6 +20,7 @@
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\key",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\led",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\adc_battery",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\w25q64",
                 "D:\\Keil\\ARM\\ARMCC\\include",
                 "D:\\Keil\\ARM\\ARMCC\\include\\rw",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\FWLIB\\src",
