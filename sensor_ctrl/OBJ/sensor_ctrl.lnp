@@ -28,6 +28,7 @@
 "..\obj\adc_battery.o"
 "..\obj\w25q64.o"
 "..\obj\debug_usart.o"
+"..\obj\servo_bus.o"
 --strict --scatter "..\OBJ\sensor_ctrl.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
