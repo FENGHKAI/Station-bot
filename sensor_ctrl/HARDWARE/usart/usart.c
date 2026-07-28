@@ -1,106 +1,33 @@
 /*
 *file usart.c
-*brief 串口驱动实现（USART1 + USART3）
-*note  支持 printf 重定向到 USART1
-*       支持裸机和 UCOS 模式（通过 SYSTEM_SUPPORT_OS 宏控制）
+*brief 通信串口驱动实现（USART2 + USART6）
+*note  接收数据通过回调函数传递给上层，不维护缓冲区
 */
 
 #include "usart.h"
 
-#if SYSTEM_SUPPORT_OS
-#include "includes.h"
-#endif
+// 保存回调函数（静态，仅本文件使用）
+static UsartRxCallback_t usart2_rx_callback = NULL;
+static UsartRxCallback_t usart6_rx_callback = NULL;
 
-// ----- printf 重定向（只用于 USART1）-----
-#if 1
-#pragma import(__use_no_semihosting)
 
-struct __FILE { int handle; };
-FILE __stdout;
+// ============================================================
+//                    USART2（ESP8266，PD5/PD6）
+// ============================================================
 
-void _sys_exit(int x) { x = x; }
-
-int fputc(int ch, FILE *f)
-{
-    while ((USART1->SR & 0X40) == 0);   // 等待发送缓冲区空
-    USART1->DR = (u8)ch;
-    return ch;
-}
-#endif
-
-// ----- USART1 接收缓冲区 -----
-u8 USART1_RX_BUF[USART_REC_LEN];
-u16 USART1_RX_STA = 0;
-
-// ----- USART3 接收缓冲区 -----
-u8 USART3_RX_BUF[USART_REC_LEN];
-u16 USART3_RX_STA = 0;
-
-/*
-*brief 初始化 USART1（PA9 TX，PA10 RX）
-*param bound 波特率
-*/
-void uart1_init(u32 bound)
+void usart2_init(u32 bound, UsartRxCallback_t callback)
 {
     GPIO_InitTypeDef GPIO_InitStruct;
     USART_InitTypeDef USART_InitStruct;
     NVIC_InitTypeDef NVIC_InitStruct;
 
-    // 使能时钟
-    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    usart2_rx_callback = callback;
 
-    // 复用功能映射
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
-    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
-
-    // 配置 PA9, PA10 为复用推挽
-    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10;
-    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
-    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
-    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
-    GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-    // 配置 USART1
-    USART_InitStruct.USART_BaudRate = bound;
-    USART_InitStruct.USART_WordLength = USART_WordLength_8b;
-    USART_InitStruct.USART_StopBits = USART_StopBits_1;
-    USART_InitStruct.USART_Parity = USART_Parity_No;
-    USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    USART_Init(USART1, &USART_InitStruct);
-
-    USART_Cmd(USART1, ENABLE);
-
-#if EN_USART1_RX
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-
-    NVIC_InitStruct.NVIC_IRQChannel = USART1_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 3;
-    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 3;
-    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStruct);
-#endif
-}
-
-/*
-*brief 初始化 USART3（PD5 TX，PD6 RX）用于 ESP8266
-*param bound 波特率
-*/
-void uart3_init(u32 bound)
-{
-    GPIO_InitTypeDef GPIO_InitStruct;
-    USART_InitTypeDef USART_InitStruct;
-    NVIC_InitTypeDef NVIC_InitStruct;
-
-    // 使能时钟
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 
-    // 复用功能映射（AF7）
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART3);
-    GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART3);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
+    GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
 
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_5 | GPIO_Pin_6;
     GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
@@ -115,73 +42,127 @@ void uart3_init(u32 bound)
     USART_InitStruct.USART_Parity = USART_Parity_No;
     USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    USART_Init(USART3, &USART_InitStruct);
+    USART_Init(USART2, &USART_InitStruct);
 
-    USART_Cmd(USART3, ENABLE);
+    USART_Cmd(USART2, ENABLE);
 
-#if EN_USART3_RX
-    USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 
-    NVIC_InitStruct.NVIC_IRQChannel = USART3_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannel = USART2_IRQn;
     NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 3;
-    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;   // 可调整
+    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStruct);
-#endif
 }
 
-// ----- USART1 中断服务函数 -----
-void USART1_IRQHandler(void)
+void usart2_send_byte(uint8_t data)
 {
-#if SYSTEM_SUPPORT_OS
-    OSIntEnter();
-#endif
-    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
-        u8 res = USART_ReceiveData(USART1);
-        // 与原有逻辑一致：以 0x0D 0x0A 为帧结束标志
-        if ((USART1_RX_STA & 0x8000) == 0) {
-            if (USART1_RX_STA & 0x4000) {
-                if (res != 0x0A) USART1_RX_STA = 0;
-                else USART1_RX_STA |= 0x8000;
-            } else {
-                if (res == 0x0D) USART1_RX_STA |= 0x4000;
-                else {
-                    USART1_RX_BUF[USART1_RX_STA & 0x3FFF] = res;
-                    USART1_RX_STA++;
-                    if (USART1_RX_STA > (USART_REC_LEN - 1)) USART1_RX_STA = 0;
-                }
-            }
-        }
-    }
-#if SYSTEM_SUPPORT_OS
-    OSIntExit();
-#endif
+    while ((USART2->SR & 0X40) == 0);
+    USART2->DR = data;
 }
 
-// ----- USART3 中断服务函数 -----
-void USART3_IRQHandler(void)
+void usart2_send_bytes(uint8_t *data, uint16_t len)
 {
-#if SYSTEM_SUPPORT_OS
-    OSIntEnter();
-#endif
-    if (USART_GetITStatus(USART3, USART_IT_RXNE) != RESET) {
-        u8 res = USART_ReceiveData(USART3);
-        // 同样使用 0x0D 0x0A 帧结束标志
-        if ((USART3_RX_STA & 0x8000) == 0) {
-            if (USART3_RX_STA & 0x4000) {
-                if (res != 0x0A) USART3_RX_STA = 0;
-                else USART3_RX_STA |= 0x8000;
-            } else {
-                if (res == 0x0D) USART3_RX_STA |= 0x4000;
-                else {
-                    USART3_RX_BUF[USART3_RX_STA & 0x3FFF] = res;
-                    USART3_RX_STA++;
-                    if (USART3_RX_STA > (USART_REC_LEN - 1)) USART3_RX_STA = 0;
-                }
-            }
+    uint16_t i;
+    for (i = 0; i < len; i++) {
+        usart2_send_byte(data[i]);
+    }
+}
+
+void usart2_send_string(char *str)
+{
+    while (*str) {
+        usart2_send_byte((uint8_t)*str++);
+    }
+}
+
+
+// ============================================================
+//                    USART6（OpenMV，PC6/PC7）
+// ============================================================
+
+void usart6_init(u32 bound, UsartRxCallback_t callback)
+{
+    GPIO_InitTypeDef GPIO_InitStruct;
+    USART_InitTypeDef USART_InitStruct;
+    NVIC_InitTypeDef NVIC_InitStruct;
+
+    usart6_rx_callback = callback;
+
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
+
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
+
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    USART_InitStruct.USART_BaudRate = bound;
+    USART_InitStruct.USART_WordLength = USART_WordLength_8b;
+    USART_InitStruct.USART_StopBits = USART_StopBits_1;
+    USART_InitStruct.USART_Parity = USART_Parity_No;
+    USART_InitStruct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStruct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_Init(USART6, &USART_InitStruct);
+
+    USART_Cmd(USART6, ENABLE);
+
+    USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
+
+    NVIC_InitStruct.NVIC_IRQChannel = USART6_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 3;
+    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStruct);
+}
+
+void usart6_send_byte(uint8_t data)
+{
+    while ((USART6->SR & 0X40) == 0);
+    USART6->DR = data;
+}
+
+void usart6_send_bytes(uint8_t *data, uint16_t len)
+{
+    uint16_t i;
+    for (i = 0; i < len; i++) {
+        usart6_send_byte(data[i]);
+    }
+}
+
+void usart6_send_string(char *str)
+{
+    while (*str) {
+        usart6_send_byte((uint8_t)*str++);
+    }
+}
+
+
+// ============================================================
+//                      中断服务函数
+// ============================================================
+
+void USART2_IRQHandler(void)
+{
+    if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
+        uint8_t data = USART_ReceiveData(USART2);
+        if (usart2_rx_callback != NULL) {
+            usart2_rx_callback(data);
         }
     }
-#if SYSTEM_SUPPORT_OS
-    OSIntExit();
-#endif
+}
+
+void USART6_IRQHandler(void)
+{
+    if (USART_GetITStatus(USART6, USART_IT_RXNE) != RESET) {
+        uint8_t data = USART_ReceiveData(USART6);
+        if (usart6_rx_callback != NULL) {
+            usart6_rx_callback(data);
+        }
+    }
 }

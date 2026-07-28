@@ -1,9 +1,7 @@
 /*
 *file usart.h
-*brief 串口驱动声明（支持 USART1 和 USART3）
-*note  调试串口：USART1（PA9 TX，PA10 RX）连接 CH340C
-*       ESP8266 串口：USART3（PD5 TX，PD6 RX）
-*       接收缓冲区大小 200 字节，以 0x0D 0x0A 作为帧结束标志
+*brief 通信串口驱动声明（USART2 + USART6）
+*note  只负责收发，不处理协议，接收数据通过回调函数传递给上层
 */
 
 #ifndef __USART_H
@@ -11,21 +9,20 @@
 
 #include "sys.h"
 
-#define USART_REC_LEN  200   // 最大接收字节数
+// 接收回调类型（无返回值，接收单个字节）
+typedef void (*UsartRxCallback_t)(uint8_t data);
 
-// 使能串口接收中断（1：使能，0：禁止）
-#define EN_USART1_RX   1
-#define EN_USART3_RX   1
+// ----- 初始化函数 -----
+void usart2_init(u32 bound, UsartRxCallback_t callback);
+void usart6_init(u32 bound, UsartRxCallback_t callback);
 
-// USART1 接收缓冲区和状态
-extern u8  USART1_RX_BUF[USART_REC_LEN];
-extern u16 USART1_RX_STA;   // bit15：完成标志，bit14：收到0x0D，bit13~0：有效字节数
+// ----- 发送函数（轮询方式）-----
+void usart2_send_byte(uint8_t data);
+void usart2_send_bytes(uint8_t *data, uint16_t len);
+void usart2_send_string(char *str);
 
-// USART3 接收缓冲区和状态
-extern u8  USART3_RX_BUF[USART_REC_LEN];
-extern u16 USART3_RX_STA;
-
-void uart1_init(u32 bound);
-void uart3_init(u32 bound);
+void usart6_send_byte(uint8_t data);
+void usart6_send_bytes(uint8_t *data, uint16_t len);
+void usart6_send_string(char *str);
 
 #endif
