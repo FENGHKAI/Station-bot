@@ -23,6 +23,8 @@
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\w25q64",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\debug_usart",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\servo_bus",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\path_planner",
+                "d:\\STM32TASK\\Robot\\sensor_ctrl\\HARDWARE\\graph_storage",
                 "D:\\Keil\\ARM\\ARMCC\\include",
                 "D:\\Keil\\ARM\\ARMCC\\include\\rw",
                 "d:\\STM32TASK\\Robot\\sensor_ctrl\\FWLIB\\src",
