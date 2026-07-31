@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\sys;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\graph_storage</IncludePath>
+              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\graph_storage;..\HARDWARE\ik_solver;..\HARDWARE\protocol;..\SYS</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -479,11 +479,6 @@
               <FilePath>..\HARDWARE\motor\motor.c</FilePath>
             </File>
             <File>
-              <FileName>sys.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\sys\sys.c</FilePath>
-            </File>
-            <File>
               <FileName>usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\usart\usart.c</FilePath>
@@ -557,6 +552,26 @@
               <FileName>path_planner.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\path_planner\path_planner.c</FilePath>
+            </File>
+            <File>
+              <FileName>ik_solver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\ik_solver\ik_solver.c</FilePath>
+            </File>
+            <File>
+              <FileName>protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\protocol\protocol.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SYS</GroupName>
+          <Files>
+            <File>
+              <FileName>sys.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYS\sys.c</FilePath>
             </File>
           </Files>
         </Group>

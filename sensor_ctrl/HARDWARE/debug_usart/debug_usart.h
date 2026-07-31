@@ -1,6 +1,7 @@
 /*
 *file debug_usart.h
-*brief 调试串口驱动声明（USART1，PA9 TX，PA10 RX）
+*brief 调试串口驱动声明（UART4，PC10 TX，PC11 RX，蓝牙无线）
+*note  用于无线调试，波特率默认 115200
 */
 
 #ifndef __DEBUG_USART_H

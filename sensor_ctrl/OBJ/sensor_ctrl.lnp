@@ -15,7 +15,6 @@
 "..\obj\delay.o"
 "..\obj\encoder.o"
 "..\obj\motor.o"
-"..\obj\sys.o"
 "..\obj\usart.o"
 "..\obj\timer.o"
 "..\obj\ultrasonic.o"
@@ -31,6 +30,9 @@
 "..\obj\servo_bus.o"
 "..\obj\graph_storage.o"
 "..\obj\path_planner.o"
+"..\obj\ik_solver.o"
+"..\obj\protocol.o"
+"..\obj\sys.o"
 --strict --scatter "..\OBJ\sensor_ctrl.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
