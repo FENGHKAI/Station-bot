@@ -12,7 +12,6 @@
 "..\obj\stm32f4xx_it.o"
 "..\obj\system_stm32f4xx.o"
 "..\obj\main.o"
-"..\obj\delay.o"
 "..\obj\encoder.o"
 "..\obj\motor.o"
 "..\obj\usart.o"
@@ -32,6 +31,7 @@
 "..\obj\path_planner.o"
 "..\obj\ik_solver.o"
 "..\obj\protocol.o"
+"..\obj\delay_1.o"
 "..\obj\sys.o"
 --strict --scatter "..\OBJ\sensor_ctrl.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols

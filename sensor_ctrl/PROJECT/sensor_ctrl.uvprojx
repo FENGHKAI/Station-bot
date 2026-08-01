@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\graph_storage;..\HARDWARE\ik_solver;..\HARDWARE\protocol;..\SYS</IncludePath>
+              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\graph_storage;..\HARDWARE\ik_solver;..\HARDWARE\protocol;..\SYS\delay;..\SYS\sys</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -464,11 +464,6 @@
           <GroupName>HARDWARE</GroupName>
           <Files>
             <File>
-              <FileName>delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\delay\delay.c</FilePath>
-            </File>
-            <File>
               <FileName>encoder.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\encoder\encoder.c</FilePath>
@@ -569,9 +564,14 @@
           <GroupName>SYS</GroupName>
           <Files>
             <File>
+              <FileName>delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\SYS\delay\delay.c</FilePath>
+            </File>
+            <File>
               <FileName>sys.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\SYS\sys.c</FilePath>
+              <FilePath>..\SYS\sys\sys.c</FilePath>
             </File>
           </Files>
         </Group>

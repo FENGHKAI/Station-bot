@@ -2,9 +2,9 @@
 #define __SYS_H	 
 #include "stm32f4xx.h" 
 
-//0,不支持ucos
-//1,支持ucos
-#define SYSTEM_SUPPORT_OS		0		//定义系统文件夹是否支持UCOS
+//0,不支持os
+//1,支持os
+#define SYSTEM_SUPPORT_OS		0		//定义系统文件夹是否支持U
 #define USE_MY_ASSERT    //用于开启自定义断言功能，注释掉后关闭断言功能
 																	    
 	 
