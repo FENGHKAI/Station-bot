@@ -1,21 +1,16 @@
 /*
 *file protocol.c
 *brief 统一通信协议实现（视觉模块 + 人机交互模块）
-*note  通过帧头 0xA5/0x5A 自动区分来源
-*       本模块只负责协议解析与封装，不涉及数据存储
+*note  权力交接制：CMD_VISION_HANDOVER 交出控制权
+*       持有控制权的一方主动发消息
 */
 
 #include "protocol.h"
-#include <string.h>
 
 // ----- 逐字节解析状态机（私有）-----
 static uint8_t parse_buf[PROTOCOL_FRAME_MAX_LEN];
 static uint8_t parse_len = 0;
 static uint8_t parse_in_frame = 0;
-
-// ============================================================
-//                        转义编码/解码
-// ============================================================
 
 /*
 *brief 转义编码
@@ -90,10 +85,6 @@ static uint8_t escape_decode_with_context(uint8_t *src, uint8_t src_len,
     return 1;
 }
 
-// ============================================================
-//                        校验和
-// ============================================================
-
 /*
 *brief 计算校验和（所有字节累加，取低8位）
 *param buf 待校验数据
@@ -108,10 +99,6 @@ static uint8_t calc_checksum(uint8_t *buf, uint8_t len)
     }
     return sum;
 }
-
-// ============================================================
-//                        组帧（私有）
-// ============================================================
 
 /*
 *brief 内部组帧
@@ -159,10 +146,6 @@ static uint8_t build_frame(uint8_t header, uint8_t cmd, uint8_t *data,
     *out_len = len;
     return 1;
 }
-
-// ============================================================
-//                        帧解析（私有）
-// ============================================================
 
 /*
 *brief 内部解析帧
@@ -223,7 +206,7 @@ static uint8_t parse_frame_internal(uint8_t *buf, uint8_t len, ProtocolResult_t 
 }
 
 // ============================================================
-//                    公共接口：初始化
+//                    公共接口
 // ============================================================
 
 /*
@@ -235,98 +218,149 @@ void Protocol_Init(void)
     parse_in_frame = 0;
 }
 
-// ============================================================
-//                    公共接口：组帧
-// ============================================================
+// ----- 控制板 ↔ 视觉（权力交接，双向通用）-----
 
 /*
-*brief 通用组帧
-*param header 帧头（0xA5 或 0x5A）
-*param cmd 命令字
-*param data 原始数据体（可为NULL）
-*param data_len 原始长度
+*brief 封装权力交接帧
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  谁收到此命令谁接管控制权，另一方进入静默
+*/
+uint8_t Protocol_BuildVisionHandover(uint8_t *out_buf, uint8_t *out_len)
+{
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_HANDOVER, NULL, 0, out_buf, out_len);
+}
+
+// ----- 视觉 → 控制板（动作指令）-----
+
+/*
+*brief 封装移动到指定坐标指令（H→F）
+*param x, y, z 目标坐标（mm）
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  控制板收到后执行逆运动学，驱动舵机到达目标位置
+*/
+uint8_t Protocol_BuildVisionMoveCoord(int16_t x, int16_t y, int16_t z,
+                                       uint8_t *out_buf, uint8_t *out_len)
+{
+    uint8_t data[6];
+    data[0] = (x >> 8) & 0xFF;
+    data[1] = x & 0xFF;
+    data[2] = (y >> 8) & 0xFF;
+    data[3] = y & 0xFF;
+    data[4] = (z >> 8) & 0xFF;
+    data[5] = z & 0xFF;
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_MOVE_COORD, data, 6, out_buf, out_len);
+}
+
+/*
+*brief 封装机械臂收回指令（H→F）
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  控制板收到后将机械臂回到初始姿态（收紧状态）
+*/
+uint8_t Protocol_BuildVisionArmRetract(uint8_t *out_buf, uint8_t *out_len)
+{
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_ARM_RETRACT, NULL, 0, out_buf, out_len);
+}
+
+// ----- 视觉 → 控制板（任务完成）-----
+
+/*
+*brief 封装抓取完成信号（H→F）
+*param status 0=成功，1=失败
 *param out_buf 输出缓冲区
 *param out_len 输出长度（指针）
 *retval 1=成功，0=失败
 */
-uint8_t Protocol_BuildFrame(uint8_t header, uint8_t cmd, uint8_t *data,
-                            uint8_t data_len, uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildVisionGrabDone(uint8_t status, uint8_t *out_buf, uint8_t *out_len)
 {
-    if (header != FRAME_HEADER_VISION && header != FRAME_HEADER_HMI) return 0;
-    return build_frame(header, cmd, data, data_len, out_buf, out_len);
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_GRAB_DONE, &status, 1, out_buf, out_len);
 }
 
 /*
-*brief 封装坐标请求帧（F→H）
+*brief 封装放包裹完成信号（H→F）
+*param status 0=成功，1=失败
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
 */
-uint8_t Protocol_BuildVisionCoordReq(uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildVisionPlaceDone(uint8_t status, uint8_t *out_buf, uint8_t *out_len)
 {
-    return build_frame(FRAME_HEADER_VISION, CMD_VISION_COORD_REQ, NULL, 0, out_buf, out_len);
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_PLACE_DONE, &status, 1, out_buf, out_len);
 }
 
 /*
-*brief 封装舵机控制帧（F→H）
+*brief 封装识别到的取件码（H→F）
+*param code 取件码字符串
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
 */
-uint8_t Protocol_BuildVisionServoCtrl(uint8_t id, uint16_t pwm, uint16_t time_ms,
-                                       uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildVisionBarcodeData(char *code, uint8_t *out_buf, uint8_t *out_len)
 {
-    uint8_t data[5];
-    data[0] = id;
-    data[1] = (pwm >> 8) & 0xFF;
-    data[2] = pwm & 0xFF;
-    data[3] = (time_ms >> 8) & 0xFF;
-    data[4] = time_ms & 0xFF;
-    return build_frame(FRAME_HEADER_VISION, CMD_VISION_SERVO_CTRL, data, 5, out_buf, out_len);
+    uint8_t len = 0;
+    if (code != NULL) {
+        len = strlen(code);
+        if (len > PROTOCOL_DATA_MAX_LEN) len = PROTOCOL_DATA_MAX_LEN;
+    }
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_BARCODE_DATA, (uint8_t*)code, len, out_buf, out_len);
 }
 
 /*
-*brief 封装读取舵机位置帧（F→H）
+*brief 封装视觉搜索超时信号（H→F）
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  触发控制板故障上报机制
 */
-uint8_t Protocol_BuildVisionServoReadPos(uint8_t id, uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildVisionSearchTimeout(uint8_t *out_buf, uint8_t *out_len)
 {
-    return build_frame(FRAME_HEADER_VISION, CMD_VISION_SERVO_READ_POS, &id, 1, out_buf, out_len);
+    return build_frame(FRAME_HEADER_VISION, CMD_VISION_SEARCH_TIMEOUT, NULL, 0, out_buf, out_len);
+}
+
+// ----- 控制板 → HMI（状态事件）-----
+
+/*
+*brief 封装"已取到包裹"信号（F→HMI）
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  HMI收到后自行切换状态为"已取到包裹"
+*/
+uint8_t Protocol_BuildHMIPicked(uint8_t *out_buf, uint8_t *out_len)
+{
+    return build_frame(FRAME_HEADER_HMI, CMD_HMI_PICKED, NULL, 0, out_buf, out_len);
 }
 
 /*
-*brief 封装读取舵机温度/电压帧（F→H）
+*brief 封装"已送达"信号（F→HMI）
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
+*note  HMI收到后自行切换状态为"已送达"
 */
-uint8_t Protocol_BuildVisionServoReadTemp(uint8_t id, uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildHMIDelivered(uint8_t *out_buf, uint8_t *out_len)
 {
-    return build_frame(FRAME_HEADER_VISION, CMD_VISION_SERVO_READ_TEMP, &id, 1, out_buf, out_len);
-}
-
-/*
-*brief 封装ACK确认帧（F→H）
-*/
-uint8_t Protocol_BuildVisionAck(uint8_t ack_cmd, uint8_t *out_buf, uint8_t *out_len)
-{
-    return build_frame(FRAME_HEADER_VISION, CMD_VISION_COORD_REQ + 0x10, &ack_cmd, 1, out_buf, out_len);
-}
-
-/*
-*brief 封装状态上报帧（F→HMI）
-*/
-uint8_t Protocol_BuildHMIStatus(uint8_t status, uint8_t *out_buf, uint8_t *out_len)
-{
-    return build_frame(FRAME_HEADER_HMI, CMD_HMI_STATUS_REPORT, &status, 1, out_buf, out_len);
+    return build_frame(FRAME_HEADER_HMI, CMD_HMI_DELIVERED, NULL, 0, out_buf, out_len);
 }
 
 /*
 *brief 封装故障上报帧（F→HMI）
+*param error_code 故障码
+*param out_buf 输出缓冲区
+*param out_len 输出长度（指针）
+*retval 1=成功，0=失败
 */
-uint8_t Protocol_BuildHMIError(char *err_str, uint8_t *out_buf, uint8_t *out_len)
+uint8_t Protocol_BuildHMIError(uint8_t error_code, uint8_t *out_buf, uint8_t *out_len)
 {
-    uint8_t len;
-    if (err_str == NULL) return 0;
-    len = strlen(err_str);
-    if (len > PROTOCOL_DATA_MAX_LEN) len = PROTOCOL_DATA_MAX_LEN;
-    return build_frame(FRAME_HEADER_HMI, CMD_HMI_ERROR_REPORT,
-                       (uint8_t*)err_str, len, out_buf, out_len);
+    return build_frame(FRAME_HEADER_HMI, CMD_HMI_ERROR_REPORT, &error_code, 1, out_buf, out_len);
 }
 
-// ============================================================
-//                    公共接口：帧解析
-// ============================================================
+// ----- 帧解析 -----
 
 /*
 *brief 解析完整帧
@@ -345,6 +379,7 @@ uint8_t Protocol_ParseFrame(uint8_t *buf, uint8_t len, ProtocolResult_t *result)
 *param data 输入字节
 *param result 输出解析结果（解析完成时填充）
 *retval 1=解析到完整帧，0=尚未完成
+*note  内部维护状态机，调用者需持续喂入数据
 */
 uint8_t Protocol_ParseByte(uint8_t data, ProtocolResult_t *result)
 {
@@ -380,6 +415,7 @@ uint8_t Protocol_ParseByte(uint8_t data, ProtocolResult_t *result)
 
 /*
 *brief 重置解析状态机
+*note  在开始新一帧接收前或发生错误时调用
 */
 void Protocol_ResetParser(void)
 {

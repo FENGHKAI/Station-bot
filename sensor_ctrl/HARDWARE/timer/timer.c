@@ -1,3 +1,8 @@
+/* 
+*file timer.c
+*brief 基本定时器tim6
+       用于计算速度和电机速度控制
+*/
 #include "timer.h"
 
 void TIM6_init(void)

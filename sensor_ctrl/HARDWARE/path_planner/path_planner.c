@@ -1,7 +1,8 @@
 /*
 *file path_planner.c
 *brief 最短路径规划实现（Dijkstra + 阻塞边避让）
-*note  图数据通过 graph_config.h 静态配置，PathPlanner_Init 加载
+*note  图数据通过 graph_config.h 静态配置
+*       货架与节点关联（包裹在节点旁边）
 */
 
 #include "path_planner.h"
@@ -37,13 +38,18 @@ AdjEdge_t* PathPlanner_FindEdge(uint8_t from, uint8_t to)
     return NULL;
 }
 
-static uint8_t find_shelf_edge(uint8_t shelf_id, uint8_t *node_a, uint8_t *node_b)
+/*
+*brief 根据货架号查找对应的节点
+*param shelf_id 货架号
+*param node_id 输出节点编号
+*retval 1=找到，0=未找到
+*/
+static uint8_t find_shelf_node(uint8_t shelf_id, uint8_t *node_id)
 {
     uint8_t i;
     for (i = 0; i < g_shelf_count; i++) {
         if (g_shelf_map[i].shelf_id == shelf_id) {
-            *node_a = g_shelf_map[i].node_a;
-            *node_b = g_shelf_map[i].node_b;
+            *node_id = g_shelf_map[i].node_id;
             return 1;
         }
     }
@@ -51,6 +57,14 @@ static uint8_t find_shelf_edge(uint8_t shelf_id, uint8_t *node_a, uint8_t *node_
 }
 
 // ----- Dijkstra 核心 -----
+
+/*
+*brief Dijkstra 最短路径算法
+*param start 起点
+*param target 终点
+*param path 输出路径
+*retval 1=找到路径，0=无路径
+*/
 static uint8_t dijkstra(uint8_t start, uint8_t target, Path_t *path)
 {
     uint8_t i, u, v, cnt;
@@ -96,6 +110,7 @@ static uint8_t dijkstra(uint8_t start, uint8_t target, Path_t *path)
 
     if (g_dist[target] >= INF) return 0;
 
+    // 回溯路径
     u = target;
     while (u != start) {
         path_rev[path_len++] = u;
@@ -112,8 +127,14 @@ static uint8_t dijkstra(uint8_t start, uint8_t target, Path_t *path)
     return 1;
 }
 
-// ----- 公共接口 -----
+// ============================================================
+//                    公共接口
+// ============================================================
 
+/*
+*brief 初始化图结构（加载 graph_config.h 中的静态配置）
+*note  复制默认图结构和货架映射表，清除所有 blocked 标志
+*/
 void PathPlanner_Init(void)
 {
     uint8_t i, j;
@@ -132,11 +153,19 @@ void PathPlanner_Init(void)
     }
 }
 
+/*
+*brief 重置图结构为默认配置
+*note  等同于 PathPlanner_Init()
+*/
 void PathPlanner_ClearGraph(void)
 {
     PathPlanner_Init();
 }
 
+/*
+*brief 阻塞一条边（双向标记）
+*param node_a, node_b 边的两个端点
+*/
 void PathPlanner_BlockEdge(uint8_t node_a, uint8_t node_b)
 {
     AdjEdge_t *edge;
@@ -148,6 +177,10 @@ void PathPlanner_BlockEdge(uint8_t node_a, uint8_t node_b)
     if (edge) edge->blocked = 1;
 }
 
+/*
+*brief 解除一条边的阻塞状态（双向解除）
+*param node_a, node_b 边的两个端点
+*/
 void PathPlanner_UnblockEdge(uint8_t node_a, uint8_t node_b)
 {
     AdjEdge_t *edge;
@@ -161,11 +194,25 @@ void PathPlanner_UnblockEdge(uint8_t node_a, uint8_t node_b)
 
 // ----- 路径规划 -----
 
+/*
+*brief 规划从起点到终点的最短路径
+*param start 起点
+*param target 终点
+*param path 输出路径
+*retval 1=找到路径，0=无路径
+*/
 uint8_t PathPlanner_PlanPath(uint8_t start, uint8_t target, Path_t *path)
 {
     return dijkstra(start, target, path);
 }
 
+/*
+*brief 规划往返路径（起点→目标→起点）
+*param start 起点
+*param target 目标点
+*param path 输出路径
+*retval 1=找到路径，0=无路径
+*/
 uint8_t PathPlanner_PlanRoundTrip(uint8_t start, uint8_t target, Path_t *path)
 {
     Path_t go_path, back_path;
@@ -187,68 +234,51 @@ uint8_t PathPlanner_PlanRoundTrip(uint8_t start, uint8_t target, Path_t *path)
     return 1;
 }
 
+/*
+*brief 规划到货架的往返路径（从原点出发，到达货架所在节点后返回原点）
+*param shelf_id 货架编号
+*param path 输出路径
+*retval 1=找到路径，0=货架不存在或无路径
+*/
 uint8_t PathPlanner_PlanToShelf(uint8_t shelf_id, Path_t *path)
 {
-    uint8_t node_a, node_b;
-    Path_t go_a, go_b, back_a, back_b;
-    Path_t candidate1, candidate2;
-    uint8_t i;
-    AdjEdge_t *edge;
+    uint8_t target_node;
 
-    if (!find_shelf_edge(shelf_id, &node_a, &node_b)) return 0;
+    if (!find_shelf_node(shelf_id, &target_node)) return 0;
 
-    candidate1.len = 0;
-    candidate2.len = 0;
-
-    // 候选1：0 -> node_a -> (过边) -> node_b -> 0
-    if (dijkstra(0, node_a, &go_a) && dijkstra(node_b, 0, &back_a)) {
-        edge = PathPlanner_FindEdge(node_a, node_b);
-        candidate1.len = 0;
-        candidate1.total_cost = go_a.total_cost + (edge ? edge->weight : 0) + back_a.total_cost;
-        for (i = 0; i < go_a.len; i++) candidate1.nodes[candidate1.len++] = go_a.nodes[i];
-        candidate1.nodes[candidate1.len++] = node_b;
-        for (i = 1; i < back_a.len; i++) {
-            if (back_a.nodes[i] == candidate1.nodes[candidate1.len - 1]) continue;
-            candidate1.nodes[candidate1.len++] = back_a.nodes[i];
-        }
-    }
-
-    // 候选2：0 -> node_b -> (过边) -> node_a -> 0
-    if (dijkstra(0, node_b, &go_b) && dijkstra(node_a, 0, &back_b)) {
-        edge = PathPlanner_FindEdge(node_a, node_b);
-        candidate2.len = 0;
-        candidate2.total_cost = go_b.total_cost + (edge ? edge->weight : 0) + back_b.total_cost;
-        for (i = 0; i < go_b.len; i++) candidate2.nodes[candidate2.len++] = go_b.nodes[i];
-        candidate2.nodes[candidate2.len++] = node_a;
-        for (i = 1; i < back_b.len; i++) {
-            if (back_b.nodes[i] == candidate2.nodes[candidate2.len - 1]) continue;
-            candidate2.nodes[candidate2.len++] = back_b.nodes[i];
-        }
-    }
-
-    if (candidate1.len > 0 && candidate2.len > 0) {
-        *path = (candidate1.total_cost <= candidate2.total_cost) ? candidate1 : candidate2;
-    } else if (candidate1.len > 0) {
-        *path = candidate1;
-    } else if (candidate2.len > 0) {
-        *path = candidate2;
-    } else {
-        return 0;
-    }
-    return 1;
+    return PathPlanner_PlanRoundTrip(0, target_node, path);
 }
 
+/*
+*brief 从当前位置重新规划到目标
+*param current 当前位置
+*param target 目标点
+*param path 输出路径
+*retval 1=找到路径，0=无路径
+*note  用于障碍物避让后的重新规划
+*/
 uint8_t PathPlanner_ReplanFromCurrent(uint8_t current, uint8_t target, Path_t *path)
 {
     return dijkstra(current, target, path);
 }
 
-uint8_t PathPlanner_FindShelf(uint8_t shelf_id, uint8_t *node_a, uint8_t *node_b)
+/*
+*brief 根据货架号查找对应的节点
+*param shelf_id 货架号
+*param node_id 输出节点编号
+*retval 1=找到，0=未找到
+*/
+uint8_t PathPlanner_FindShelf(uint8_t shelf_id, uint8_t *node_id)
 {
-    return find_shelf_edge(shelf_id, node_a, node_b);
+    return find_shelf_node(shelf_id, node_id);
 }
 
 // ----- 调试 -----
+
+/*
+*brief 打印路径
+*param path 路径
+*/
 void PathPlanner_PrintPath(Path_t *path)
 {
     uint8_t i;
@@ -260,6 +290,9 @@ void PathPlanner_PrintPath(Path_t *path)
     printf(" (cost: %d)\r\n", path->total_cost);
 }
 
+/*
+*brief 打印图结构（调试用）
+*/
 void PathPlanner_PrintGraph(void)
 {
     uint8_t i, j;
@@ -273,10 +306,14 @@ void PathPlanner_PrintGraph(void)
         for (j = 0; j < node->edge_cnt; j++) {
             edge = &node->edges[j];
             printf("->%d(w:%d", edge->target, edge->weight);
-            if (edge->shelf_id) printf(",shelf:%d", edge->shelf_id);
             if (edge->blocked) printf(",BLOCKED");
             printf(") ");
         }
         printf("\r\n");
+    }
+
+    printf("Shelf count: %d\r\n", g_shelf_count);
+    for (i = 0; i < g_shelf_count; i++) {
+        printf("Shelf %d -> Node %d\r\n", g_shelf_map[i].shelf_id, g_shelf_map[i].node_id);
     }
 }

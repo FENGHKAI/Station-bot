@@ -1,3 +1,7 @@
+/* 
+*file timer.c
+*brief 基本定时器tim6
+*/
 #ifndef _TIMER_H
 #define _TIMER_H
 
