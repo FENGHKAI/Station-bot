@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER,STM32F40_41xxx</Define>
               <Undefine></Undefine>
-              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\graph_storage;..\HARDWARE\ik_solver;..\HARDWARE\protocol;..\SYS\delay;..\SYS\sys</IncludePath>
+              <IncludePath>..\CORE;..\FWLIB\inc;..\USER;..\HARDWARE\delay;..\HARDWARE\usart;..\HARDWARE\encoder;..\HARDWARE\motor;..\HARDWARE\timer;..\HARDWARE\ultrasonic;..\HARDWARE\sys_time;..\HARDWARE\tracking;..\HARDWARE\mpu6050;..\HARDWARE\buzzer;..\HARDWARE\key;..\HARDWARE\led;..\HARDWARE\adc_battery;..\HARDWARE\w25q64;..\HARDWARE\debug_usart;..\HARDWARE\servo_bus;..\HARDWARE\path_planner;..\HARDWARE\ik_solver;..\HARDWARE\protocol;..\SYS\delay;..\SYS\sys;..\FreeRTOS\include;..\FreeRTOS\portable;..\APP</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -539,11 +539,6 @@
               <FilePath>..\HARDWARE\servo_bus\servo_bus.c</FilePath>
             </File>
             <File>
-              <FileName>graph_storage.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\HARDWARE\graph_storage\graph_storage.c</FilePath>
-            </File>
-            <File>
               <FileName>path_planner.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\path_planner\path_planner.c</FilePath>
@@ -574,6 +569,54 @@
               <FilePath>..\SYS\sys\sys.c</FilePath>
             </File>
           </Files>
+        </Group>
+        <Group>
+          <GroupName>FreeRTOS</GroupName>
+          <Files>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\event_groups.c</FilePath>
+            </File>
+            <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>stream_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\stream_buffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\timers.c</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\portable\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\FreeRTOS\portable\port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>APP</GroupName>
         </Group>
       </Groups>
     </Target>

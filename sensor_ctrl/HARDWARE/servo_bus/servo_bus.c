@@ -10,6 +10,7 @@ uint8_t servo_state = SERVO_STATE_STOP;
 
 /*
 *brief 初始化 USART3（PB10 TX）
+*note  先强制 TX 拉高再使能 USART，防止初始化时低电平脉冲导致舵机误动
 */
 void servo_bus_init(u32 bound)
 {
@@ -19,6 +20,18 @@ void servo_bus_init(u32 bound)
     RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
 
+    // ========== 关键修复：先强制 TX 拉高 ==========
+    // 防止 USART 初始化过程中产生低电平脉冲被舵机误认为指令
+    GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10;
+    GPIO_InitStruct.GPIO_Mode = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStruct.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+    GPIO_Init(GPIOB, &GPIO_InitStruct);
+    GPIO_SetBits(GPIOB, GPIO_Pin_10);   // 强制拉高
+    delay_ms(10);                        // 等待电平稳定
+
+    // ========== 再配置复用功能 ==========
     GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_USART3);
 
     GPIO_InitStruct.GPIO_Pin = GPIO_Pin_10;
@@ -28,6 +41,7 @@ void servo_bus_init(u32 bound)
     GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+    // ========== USART 配置 ==========
     USART_InitStruct.USART_BaudRate = bound;
     USART_InitStruct.USART_WordLength = USART_WordLength_8b;
     USART_InitStruct.USART_StopBits = USART_StopBits_1;
@@ -39,7 +53,7 @@ void servo_bus_init(u32 bound)
     USART_Cmd(USART3, ENABLE);
 }
 
-static void servo_send_string(char *str)
+void servo_send_string(char *str)
 {
     while (*str) {
         while ((USART3->SR & 0X40) == 0);
@@ -219,4 +233,51 @@ void servo_force_id(uint8_t new_id)
     if (new_id > 254) new_id = 254;
     sprintf(cmd, "#255PID%03d!\r\n", new_id);
     servo_send_string(cmd);
+}
+
+/* *brief 矫正中值：把舵机当前位置设置为1500（指令 #000PSCK!）
+ *note 调用前舵机必须已释放扭力并扳到目标位置，结果掉电保存 */
+void servo_correct_mid(uint8_t id)
+{
+    char cmd[16];
+    sprintf(cmd, "#%03dPSCK!\r\n", id);
+    servo_send_string(cmd);
+}
+
+/* *brief 设置开机模式（指令 #000PCSMx!）
+ *param mode 1:开机转到中位(默认) 2:开机保持当前位置 3:开机无力 */
+void servo_set_boot_mode(uint8_t id, uint8_t mode)
+{
+    char cmd[16];
+    if (mode < 1) mode = 1;
+    if (mode > 3) mode = 3;
+    sprintf(cmd, "#%03dPCSM%d!\r\n", id, mode);
+    servo_send_string(cmd);
+}
+
+void servo_passthrough(char *str)
+{
+    printf("[TX] %s\r\n", str);
+    servo_send_string(str);
+}
+
+/* *brief 广播：释放所有舵机扭力（无返回） */
+void servo_broadcast_release(void)
+{
+    printf("[TX] #255PULK!\r\n");
+    servo_send_string("#255PULK!\r\n");
+}
+
+/* *brief 广播：所有舵机当前位置=新中位1500（无返回） */
+void servo_broadcast_correct_mid(void)
+{
+    printf("[TX] #255PSCK!\r\n");
+    servo_send_string("#255PSCK!\r\n");
+}
+
+/* *brief 广播：所有舵机恢复扭力（无返回） */
+void servo_broadcast_enable(void)
+{
+    printf("[TX] #255PULR!\r\n");
+    servo_send_string("#255PULR!\r\n");
 }

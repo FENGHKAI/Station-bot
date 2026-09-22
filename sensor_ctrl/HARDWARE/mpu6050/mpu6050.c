@@ -2,14 +2,18 @@
 *file mpu6050.c
 *brief MPU6050 驱动实现（软件 I2C，陀螺仪 Z 轴积分得到偏航角）
 *note  依赖 sys_time.h 提供 udelay() 和 get_us()
+*       新增：上电自动零漂补偿（抵消地不平/倾斜导致的静态漂移）
 */
 
 #include "mpu6050.h"
 
-// 软件 I2C 底层
+// ============================================================
+// 软件 I2C 底层（与之前完全一致）
+// ============================================================
+
 static void I2C_Delay(void)
 {
-    udelay(2);
+    delay_us(2);
 }
 
 static void I2C_Start(void)
@@ -111,13 +115,24 @@ static int16_t MPU6050_ReadInt16(uint8_t reg)
     return (int16_t)((h << 8) | l);
 }
 
+// ============================================================
+// 全局变量
+// ============================================================
+
 static float gyro_z_offset = 0.0f;
 static float yaw_angle = 0.0f;
 static uint32_t last_time_us = 0;
 
+// ----- 新增：自动补偿变量 -----
+static float compensation_dps = 0.0f;   // 最终补偿值（自动计算）
+
+// ============================================================
+// 公共接口
+// ============================================================
+
 /*
 *brief 初始化 GPIO 和 MPU6050
-*note  唤醒芯片，量程 ±2000dps，采样率 100Hz，滤波带宽 42Hz
+*note  唤醒芯片，量程 ±2000dps，采样率 100Hz，滤波带宽 184Hz
 */
 void MPU6050_Init(void)
 {
@@ -135,18 +150,24 @@ void MPU6050_Init(void)
     MPU6050_SCL_HIGH();
     MPU6050_SDA_HIGH();
 
-    udelay(10000);
+    delay_us(10000);
 
     MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x80);
-    udelay(10000);
+    delay_us(10000);
 
     MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x01);
     MPU6050_WriteReg(MPU6050_GYRO_CONFIG, 0x18);
+
+    // ---- 修改：提高带宽至 184Hz，配合 100-200Hz 采样 ----
     MPU6050_WriteReg(MPU6050_ACCEL_CONFIG, 0x00);
     MPU6050_WriteReg(MPU6050_SMPLRT_DIV, 9);
-    MPU6050_WriteReg(MPU6050_CONFIG, 0x03);
+    MPU6050_WriteReg(MPU6050_CONFIG, 0x01);   // 改为 0x01 (184Hz)
 
     MPU6050_ResetYaw();
+    compensation_dps = 0.0f;   // 默认无补偿
+
+    MPU6050_CalibrateGyro(200);
+    MPU6050_AutoCompensate(300);
 }
 
 /*
@@ -163,11 +184,46 @@ void MPU6050_CalibrateGyro(uint32_t samples)
 
     for (i = 0; i < samples; i++) {
         sum += MPU6050_ReadInt16(MPU6050_GYRO_ZOUT_H);
-        udelay(1000);
+        delay_us(1000);
     }
     gyro_z_offset = (float)sum / samples / 16.4f;
 
     last_time_us = get_us();
+    compensation_dps = 0.0f;   // 校准后重置补偿
+}
+
+/*
+*brief 自动计算并设置零漂补偿（解决地不平/倾斜导致的静态漂移）
+*param duration_ms 采集持续时间（ms），建议 2000~5000ms
+*note  必须在芯片完全静止时调用！调用后补偿值自动生效。
+*       原理：采集 duration_ms 毫秒内的平均角速度，取反作为补偿值。
+*/
+void MPU6050_AutoCompensate(uint32_t duration_ms)
+{
+    uint32_t start_us = get_us();
+    uint32_t count = 0;
+    float sum_dps = 0.0f;
+    int16_t raw;
+    float dps;
+
+    printf("Auto-compensating... keep still for %d ms\r\n", duration_ms);
+
+    while (get_us() - start_us < duration_ms * 1000) {
+        raw = MPU6050_ReadInt16(MPU6050_GYRO_ZOUT_H);
+        dps = (float)raw / 16.4f - gyro_z_offset;
+        sum_dps += dps;
+        count++;
+        delay_us(1000);   // 1ms 间隔，避免过于频繁
+    }
+
+    if (count > 0) {
+        float avg_dps = sum_dps / count;
+        compensation_dps = -avg_dps;   // 取反作为补偿值
+        printf("Auto-compensation done: %.3f dps\r\n", compensation_dps);
+    } else {
+        compensation_dps = 0.0f;
+        printf("Auto-compensation failed (no data)\r\n");
+    }
 }
 
 /*
@@ -183,6 +239,8 @@ void MPU6050_ResetYaw(void)
 *brief 获取当前偏航角（度）
 *retval 累计角度（顺时针为正，逆时针为负）
 *note  每次读取会积分 Z 轴角速度，长时间会有漂移
+*       已内置自动补偿值（由 MPU6050_AutoCompensate 设置）
+*       死区阈值 0.15 dps，低于该值忽略不积分
 */
 float MPU6050_GetYaw(void)
 {
@@ -190,9 +248,18 @@ float MPU6050_GetYaw(void)
     float gyro_z_dps;
     uint32_t now_us;
     float dt;
+    float result;
 
     raw = MPU6050_ReadInt16(MPU6050_GYRO_ZOUT_H);
     gyro_z_dps = (float)raw / 16.4f - gyro_z_offset;
+
+    // ----- 关键：加上自动补偿值 -----
+    gyro_z_dps += compensation_dps;
+
+    // ----- 死区滤波 -----
+    if (fabsf(gyro_z_dps) < 0.15f) {
+        gyro_z_dps = 0.0f;
+    }
 
     now_us = get_us();
     if (last_time_us == 0) {
@@ -204,5 +271,8 @@ float MPU6050_GetYaw(void)
     last_time_us = now_us;
 
     yaw_angle += gyro_z_dps * dt;
-    return yaw_angle;
+
+    result = fmodf(yaw_angle + 180.0f, 360.0f) - 180.0f;
+    if (result < -180.0f) result += 360.0f;
+    return result;
 }

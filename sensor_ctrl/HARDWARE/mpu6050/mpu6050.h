@@ -9,6 +9,7 @@
 
 #include "sys.h"
 #include "sys_time.h"
+#include "delay.h"
 
 // SCL 操作（PB8）
 #define MPU6050_SCL_HIGH()  GPIO_SetBits(GPIOB, GPIO_Pin_8)
@@ -36,5 +37,6 @@ void MPU6050_Init(void);
 void MPU6050_CalibrateGyro(uint32_t samples);
 float MPU6050_GetYaw(void);
 void MPU6050_ResetYaw(void);
+void MPU6050_AutoCompensate(uint32_t duration_ms);
 
 #endif

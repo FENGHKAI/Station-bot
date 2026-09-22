@@ -3,17 +3,19 @@
 
 #include "sys.h"
 
-// ----- SysTick 中断独立开关（裸机下有效）-----
-#ifndef USE_SYSTICK_INTERRUPT
-#define USE_SYSTICK_INTERRUPT  0
+#if SYSTEM_SUPPORT_OS
+    #include "FreeRTOS.h"
+    #include "task.h"
 #endif
 
-// 全局毫秒计数器（裸机下由 SysTick 中断累加，FreeRTOS 下由 tick hook 累加）
-extern volatile uint32_t systick_ms;
+/* ---- 公共接口 ---- */
+void delay_init(uint32_t sysclk_mhz);   /* 调度器启动前调用一次 */
+void delay_us(uint32_t nus);            /* SysTick轮询（你原来的方式） */
+void delay_ms(uint16_t nms);            /* OS下调度器运行中自动转vTaskDelay */
 
-// ----- 公共接口 -----
-void delay_init(uint32_t sysclk_mhz);
-void delay_us(uint32_t nus);
-void delay_ms(uint16_t nms);
+#if SYSTEM_SUPPORT_OS
+extern volatile uint32_t systick_ms;    /* 由FreeRTOS tick hook累加，1ms一次 */
+#endif
 
 #endif
+

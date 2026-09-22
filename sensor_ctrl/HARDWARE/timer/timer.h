@@ -11,4 +11,8 @@
 
 void TIM6_init(void);
 
+void Motor_PauseControl(void);
+void Motor_ResumeControl(void);
+
+
 #endif

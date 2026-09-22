@@ -6,6 +6,8 @@
 
 #include "debug_usart.h"
 
+#include "led.h"
+
 // ----- printf 重定向（绑定 UART4）-----
 #if 1
 #pragma import(__use_no_semihosting)
@@ -77,7 +79,6 @@ void debug_usart_init(u32 bound)
 */
 void UART4_IRQHandler(void)
 {
-
     if (USART_GetITStatus(UART4, USART_IT_RXNE) != RESET) {
         u8 res = USART_ReceiveData(UART4);
 
@@ -94,6 +95,16 @@ void UART4_IRQHandler(void)
                 }
             }
         }
+
+        // ✅ 接收完成后调用回调（放在外面）
+        if (DBG_RX_STA & 0x8000) {
+            uart4Callback();
+        }
     }
+}
+
+__weak void uart4Callback(void)
+{
+    
 }
 

@@ -8,6 +8,7 @@
 #define __SERVO_BUS_H
 
 #include "sys.h"
+#include "delay.h"
 
 // 舵机状态
 extern uint8_t servo_state;
@@ -28,6 +29,8 @@ extern uint8_t servo_state;
 #define SERVO_MODE_360_CCW   6   // 360° 定圈逆时针
 #define SERVO_MODE_TIMER_CW  7   // 360° 定时顺时针
 #define SERVO_MODE_TIMER_CCW 8   // 360° 定时逆时针
+
+void servo_send_string(char *str);
 
 // ----- 初始化和状态 -----
 void servo_bus_init(u32 bound);
@@ -52,5 +55,14 @@ void servo_set_mode_broadcast(uint8_t mode);
 
 // ----- ID 操作（广播）-----
 void servo_force_id(uint8_t new_id);
+
+void servo_correct_mid(uint8_t id);   // 矫正中值：当前位置 = 1500
+void servo_set_boot_mode(uint8_t id, uint8_t mode); // 设置开机模式
+
+void servo_passthrough(char *str);
+void servo_broadcast_release(void);
+void servo_broadcast_correct_mid(void);
+void servo_broadcast_enable(void);
+
 
 #endif

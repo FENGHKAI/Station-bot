@@ -17,4 +17,6 @@ extern u16 DBG_RX_STA;
 
 void debug_usart_init(u32 bound);
 
+void uart4Callback(void);
+
 #endif

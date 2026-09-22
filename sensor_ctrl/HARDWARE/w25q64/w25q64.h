@@ -45,5 +45,7 @@ void W25Q64_PageProgram(uint32_t addr, uint8_t *data, uint16_t len);
 void W25Q64_WaitBusy(void);
 void W25Q64_WriteEnable(void);
 void W25Q64_WriteDisable(void);
+void W25Q64_ChipErase(void);
+
 
 #endif

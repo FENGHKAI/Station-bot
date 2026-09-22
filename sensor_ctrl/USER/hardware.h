@@ -10,7 +10,6 @@
 #include "buzzer.h"
 #include "debug_usart.h"
 #include "encoder.h"
-#include "graph_storage.h"
 #include "ik_solver.h"
 #include "key.h"
 #include "led.h"
@@ -24,6 +23,5 @@
 #include "tracking.h"
 #include "ultrasonic.h"
 #include "usart.h"
-#include "w25q64.h"
 
 #endif

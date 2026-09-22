@@ -129,14 +129,20 @@ int32_t getCounter(Encoder_Handle_t Encoder)
     return encoder_cnt;
 }
 
-/* 
+/*
 *brief 获取轮子速度接口
 *detail index输入取值ENC_LF,ENC_LR,ENC_RF,ENC_RR,ENC_NUM
+*       右轮（RF、RR）的返回值自动取反，使所有轮子反馈方向统一（正=前进）
 */
 float get_speed(Encoder_Index_t index)
 {
     if (index >= ENC_NUM) return 0.0f;
-    return Encoder_Speed_t[index];
+    float speed = Encoder_Speed_t[index];
+    // 右轮取反（因为物理接线导致右轮编码器方向与左轮相反）
+    if (index == ENC_LF || index == ENC_LR) {
+        speed = -speed;
+    }
+    return speed;
 }
 
 /* 

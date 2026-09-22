@@ -49,7 +49,7 @@ void usart2_init(u32 bound, UsartRxCallback_t callback)
     USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 
     NVIC_InitStruct.NVIC_IRQChannel = USART2_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 3;
+    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 6;
     NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStruct);
@@ -115,7 +115,7 @@ void usart6_init(u32 bound, UsartRxCallback_t callback)
     USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
 
     NVIC_InitStruct.NVIC_IRQChannel = USART6_IRQn;
-    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 3;
+    NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 6;
     NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
     NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStruct);
